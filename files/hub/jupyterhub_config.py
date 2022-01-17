@@ -38,6 +38,10 @@ def camelCaseify(s):
 AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
 
 c.JupyterHub.spawner_class = "kubespawner.KubeSpawner"
+c.KubeSpawner.environment = {
+    "JUPYTER_ENABLE_LAB": "true",
+}
+
 
 # Connect to a proxy running in a different pod. Note that *_SERVICE_*
 # environment variables are set by Kubernetes for Services
@@ -77,21 +81,21 @@ if db_password is not None:
 
 
 # c.JupyterHub configuration from Helm chart's configmap
-for trait, cfg_key in (
-    ("concurrent_spawn_limit", None),
-    ("active_server_limit", None),
-    ("base_url", None),
-    ("allow_named_servers", None),
-    ("named_server_limit_per_user", None),
-    ("authenticate_prometheus", None),
-    ("redirect_to_server", None),
-    ("shutdown_on_logout", None),
-    ("template_paths", None),
-    ("template_vars", None),
-):
-    if cfg_key is None:
-        cfg_key = camelCaseify(trait)
-    set_config_if_not_none(c.JupyterHub, trait, "hub." + cfg_key)
+# for trait, cfg_key in (
+#     ("concurrent_spawn_limit", None),
+#     ("active_server_limit", None),
+#     ("base_url", None),
+#     ("allow_named_servers", None),
+#     ("named_server_limit_per_user", None),
+#     ("authenticate_prometheus", None),
+#     ("redirect_to_server", None),
+#     ("shutdown_on_logout", None),
+#     ("template_paths", None),
+#     ("template_vars", None),
+# ):
+#     if cfg_key is None:
+#         cfg_key = camelCaseify(trait)
+#     set_config_if_not_none(c.JupyterHub, trait, "hub." + cfg_key)
 
 # hub_bind_url configures what the JupyterHub process within the hub pod's
 # container should listen to.
@@ -134,42 +138,42 @@ set_config_if_not_none(
     "hub.consecutiveFailureLimit",
 )
 
-for trait, cfg_key in (
-    ("pod_name_template", None),
-    ("start_timeout", None),
-    ("image_pull_policy", "image.pullPolicy"),
-    # ('image_pull_secrets', 'image.pullSecrets'), # Managed manually below
-    ("events_enabled", "events"),
-    ("extra_labels", None),
-    ("extra_annotations", None),
-    ("uid", None),
-    ("fs_gid", None),
-    ("service_account", "serviceAccountName"),
-    ("storage_extra_labels", "storage.extraLabels"),
-    # ("tolerations", "extraTolerations"), # Managed manually below
-    ("node_selector", None),
-    ("node_affinity_required", "extraNodeAffinity.required"),
-    ("node_affinity_preferred", "extraNodeAffinity.preferred"),
-    ("pod_affinity_required", "extraPodAffinity.required"),
-    ("pod_affinity_preferred", "extraPodAffinity.preferred"),
-    ("pod_anti_affinity_required", "extraPodAntiAffinity.required"),
-    ("pod_anti_affinity_preferred", "extraPodAntiAffinity.preferred"),
-    ("lifecycle_hooks", None),
-    ("init_containers", None),
-    ("extra_containers", None),
-    ("mem_limit", "memory.limit"),
-    ("mem_guarantee", "memory.guarantee"),
-    ("cpu_limit", "cpu.limit"),
-    ("cpu_guarantee", "cpu.guarantee"),
-    ("extra_resource_limits", "extraResource.limits"),
-    ("extra_resource_guarantees", "extraResource.guarantees"),
-    ("environment", "extraEnv"),
-    ("profile_list", None),
-    ("extra_pod_config", None),
-):
-    if cfg_key is None:
-        cfg_key = camelCaseify(trait)
-    set_config_if_not_none(c.KubeSpawner, trait, "singleuser." + cfg_key)
+# for trait, cfg_key in (
+#     ("pod_name_template", None),
+#     ("start_timeout", None),
+#     ("image_pull_policy", "image.pullPolicy"),
+#     # ('image_pull_secrets', 'image.pullSecrets'), # Managed manually below
+#     ("events_enabled", "events"),
+#     ("extra_labels", None),
+#     ("extra_annotations", None),
+#     ("uid", None),
+#     ("fs_gid", None),
+#     ("service_account", "serviceAccountName"),
+#     ("storage_extra_labels", "storage.extraLabels"),
+#     # ("tolerations", "extraTolerations"), # Managed manually below
+#     ("node_selector", None),
+#     ("node_affinity_required", "extraNodeAffinity.required"),
+#     ("node_affinity_preferred", "extraNodeAffinity.preferred"),
+#     ("pod_affinity_required", "extraPodAffinity.required"),
+#     ("pod_affinity_preferred", "extraPodAffinity.preferred"),
+#     ("pod_anti_affinity_required", "extraPodAntiAffinity.required"),
+#     ("pod_anti_affinity_preferred", "extraPodAntiAffinity.preferred"),
+#     ("lifecycle_hooks", None),
+#     ("init_containers", None),
+#     ("extra_containers", None),
+#     ("mem_limit", "memory.limit"),
+#     ("mem_guarantee", "memory.guarantee"),
+#     ("cpu_limit", "cpu.limit"),
+#     ("cpu_guarantee", "cpu.guarantee"),
+#     ("extra_resource_limits", "extraResource.limits"),
+#     ("extra_resource_guarantees", "extraResource.guarantees"),
+#     ("environment", "extraEnv"),
+#     ("profile_list", None),
+#     ("extra_pod_config", None),
+# ):
+#     if cfg_key is None:
+#         cfg_key = camelCaseify(trait)
+#     set_config_if_not_none(c.KubeSpawner, trait, "singleuser." + cfg_key)
 
 image = get_config("singleuser.image.name")
 if image:
@@ -236,6 +240,49 @@ if tolerations:
 
 # Configure dynamically provisioning pvc
 storage_type = get_config("singleuser.storage.type")
+
+
+# Proxy config
+c.JupyterHub.cleanup_servers = False
+# Network
+c.JupyterHub.allow_named_servers = False
+c.JupyterHub.ip = "0.0.0.0"
+c.JupyterHub.hub_ip = "0.0.0.0"
+
+
+jupyterhub_env = os.environ["JUPYTERHUB_ENV"].upper()
+jupyterhub_hub_host = f"hub.jupyter-bla"
+c.JupyterHub.hub_connect_ip = jupyterhub_hub_host
+
+
+
+# SecurityContext
+c.KubeSpawner.privileged = True
+
+# ServiceAccount
+c.KubeSpawner.service_account = "default"
+c.KubeSpawner.start_timeout = 60 * 5
+c.KubernetesSpawner.verify_ssl = True
+c.KubeSpawner.pod_name_template = (
+    "jupyter-{username}-" + os.environ["JUPYTERHUB_ENV"].lower()
+)
+
+
+# Misc
+c.JupyterHub.cleanup_servers = False
+# SecurityContext
+c.KubeSpawner.privileged = True
+# User namespace
+c.KubeSpawner.enable_user_namespaces = True
+
+c.KubeSpawner.uid = 1001
+c.KubeSpawner.fs_gid = 100
+
+# # HTTP Proxy auth token
+c.ConfigurableHTTPProxy.auth_token = (
+    ""
+)
+
 if storage_type == "dynamic":
     pvc_name_template = get_config("singleuser.storage.dynamic.pvcNameTemplate")
     c.KubeSpawner.pvc_name_template = pvc_name_template
@@ -267,18 +314,29 @@ if storage_type == "dynamic":
         }
     ]
 elif storage_type == "static":
-    pvc_claim_name = get_config("singleuser.storage.static.pvcName")
+    c.KubeSpawner.storage_capacity = "10Gi"
+    c.KubeSpawner.storage_class = "scw-bssd"
+    c.KubeSpawner.storage_pvc_ensure = True
+    c.KubeSpawner.pvc_name_template = (
+            "claim-{username}-" + os.environ["JUPYTERHUB_ENV"].lower()
+    )
     c.KubeSpawner.volumes = [
-        {"name": "home", "persistentVolumeClaim": {"claimName": pvc_claim_name}}
+        {
+            "name": "volume-workspace-{username}-" + os.environ["JUPYTERHUB_ENV"].lower(),
+            "persistentVolumeClaim": {
+                "claimName": "claim-{username}-" + os.environ["JUPYTERHUB_ENV"].lower()
+            },
+        },
     ]
-
     c.KubeSpawner.volume_mounts = [
         {
-            "mountPath": get_config("singleuser.storage.homeMountPath"),
-            "name": "home",
-            "subPath": get_config("singleuser.storage.static.subPath"),
+            "name": "volume-workspace-{username}-" + os.environ["JUPYTERHUB_ENV"].lower(),
+            "mountPath": "/workspace",
         }
     ]
+
+
+
 
 # Inject singleuser.extraFiles as volumes and volumeMounts with data loaded from
 # the dedicated k8s Secret prepared to hold the extraFiles actual content.
@@ -322,8 +380,18 @@ c.KubeSpawner.volume_mounts.extend(
     get_config("singleuser.storage.extraVolumeMounts", [])
 )
 
-c.JupyterHub.services = []
+# Culling
+c.JupyterHub.services = [
+    {
+        "name": "idle-culler",
+        "admin": True,
+        "command": [sys.executable, "-m", "jupyterhub_idle_culler", "--timeout=3600"],
+    }
+]
 c.JupyterHub.load_roles = []
+
+# Logs
+c.JupyterHub.log_level = "DEBUG"
 
 # jupyterhub-idle-culler's permissions are scoped to what it needs only, see
 # https://github.com/jupyterhub/jupyterhub-idle-culler#permissions.

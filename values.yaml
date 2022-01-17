@@ -64,7 +64,7 @@ hub:
         - ReadWriteOnce
       storage: 1Gi
       subPath:
-      storageClassName:
+      storageClassName: scw-bssd
     url:
     password:
   labels: {}
@@ -73,13 +73,16 @@ hub:
   args: []
   extraConfig: {}
   extraFiles: {}
-  extraEnv: {}
+  extraEnv: {
+      JUPYTERHUB_ENV: "dev",
+      JUPYTERHUB_SINGLE_USER_IMAGE: "eoepca/pde-container:1.0.1"
+  }
   extraContainers: []
   extraVolumes: []
   extraVolumeMounts: []
   image:
     name: jupyterhub/k8s-hub
-    tag: "set-by-chartpress"
+    tag: "1.1.2"
     pullPolicy:
     pullSecrets: []
   resources: {}
@@ -95,7 +98,7 @@ hub:
     maxUnavailable:
     minAvailable: 1
   networkPolicy:
-    enabled: true
+    enabled: false
     ingress: []
     ## egress for JupyterHub already includes Kubernetes internal DNS and
     ## access to the proxy, but can be restricted further, but ensure to allow
@@ -107,7 +110,7 @@ hub:
       - to:
           - ipBlock:
               cidr: 0.0.0.0/0
-    interNamespaceAccessLabels: ignore
+    interNamespaceAccessLabels: accept
     allowedIngressPorts: []
   allowNamedServers: false
   namedServerLimitPerUser:
@@ -175,7 +178,7 @@ proxy:
     rollingUpdate:
   # service relates to the proxy-public service
   service:
-    type: LoadBalancer
+    type: ClusterIP
     labels: {}
     annotations: {}
     nodePorts:
@@ -217,7 +220,7 @@ proxy:
     nodeSelector: {}
     tolerations: []
     networkPolicy:
-      enabled: true
+      enabled: false
       ingress: []
       egress:
         - to:
@@ -257,7 +260,7 @@ proxy:
     tolerations: []
     extraPorts: []
     networkPolicy:
-      enabled: true
+      enabled: false
       ingress: []
       egress:
         - to:
@@ -279,7 +282,7 @@ proxy:
       allowPrivilegeEscalation: false
     image:
       name: jupyterhub/k8s-secret-sync
-      tag: "set-by-chartpress"
+      tag: "1.1.2"
       pullPolicy:
       pullSecrets: []
     resources: {}
@@ -319,7 +322,7 @@ singleuser:
   networkTools:
     image:
       name: jupyterhub/k8s-network-tools
-      tag: "set-by-chartpress"
+      tag: "1.1.2"
       pullPolicy:
       pullSecrets: []
     resources: {}
@@ -329,7 +332,7 @@ singleuser:
     blockWithIptables: true
     ip: 169.254.169.254
   networkPolicy:
-    enabled: true
+    enabled: false
     ingress: []
     egress:
       # Required egress to communicate with the hub and DNS servers will be
@@ -358,7 +361,7 @@ singleuser:
   fsGid: 100
   serviceAccountName:
   storage:
-    type: dynamic
+    type: static
     extraLabels: {}
     extraVolumes: []
     extraVolumeMounts: []
@@ -373,9 +376,9 @@ singleuser:
       volumeNameTemplate: volume-{username}{servername}
       storageAccessModes: [ReadWriteOnce]
   image:
-    name: jupyterhub/k8s-singleuser-sample
-    tag: "set-by-chartpress"
-    pullPolicy:
+    name: eoepca/pde-container
+    tag: "1.0.1"
+    pullPolicy: IfNotPresent
     pullSecrets: []
   startTimeout: 300
   cpu:
@@ -387,7 +390,7 @@ singleuser:
   extraResource:
     limits: {}
     guarantees: {}
-  cmd:
+  cmd: jupyterhub-singleuser
   defaultUrl:
   extraPodConfig: {}
   profileList: []
@@ -509,7 +512,7 @@ prePuller:
     # image and the configuration below relates to the hook-image-awaiter Job
     image:
       name: jupyterhub/k8s-image-awaiter
-      tag: "set-by-chartpress"
+      tag: "1.1.2"
       pullPolicy:
       pullSecrets: []
     containerSecurityContext:
