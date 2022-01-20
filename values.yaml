@@ -75,7 +75,7 @@ hub:
   extraFiles: {}
   extraEnv: {
       JUPYTERHUB_ENV: "dev",
-      JUPYTERHUB_SINGLE_USER_IMAGE: "eoepca/pde-container:1.0.1"
+      JUPYTERHUB_SINGLE_USER_IMAGE: "eoepca/pde-container:1.0.3"
   }
   extraContainers: []
   extraVolumes: []
@@ -110,7 +110,7 @@ hub:
       - to:
           - ipBlock:
               cidr: 0.0.0.0/0
-    interNamespaceAccessLabels: accept
+    interNamespaceAccessLabels: ignore
     allowedIngressPorts: []
   allowNamedServers: false
   namedServerLimitPerUser:
@@ -148,7 +148,7 @@ rbac:
 # proxy relates to the proxy pod, the proxy-public service, and the autohttps
 # pod and proxy-http service.
 proxy:
-  secretToken:
+  secretToken: '8af22006c7c3dc371c5d3b4b27e2c99e63c1d5cc243fbbf9a14646020197d67c'
   annotations: {}
   deploymentStrategy:
     ## type: Recreate
@@ -361,7 +361,7 @@ singleuser:
   fsGid: 100
   serviceAccountName:
   storage:
-    type: static
+    type: dynamic
     extraLabels: {}
     extraVolumes: []
     extraVolumeMounts: []
@@ -377,7 +377,7 @@ singleuser:
       storageAccessModes: [ReadWriteOnce]
   image:
     name: eoepca/pde-container
-    tag: "1.0.1"
+    tag: "latest"
     pullPolicy: IfNotPresent
     pullSecrets: []
   startTimeout: 300
@@ -570,7 +570,7 @@ cull:
   maxAge: 0 # --max-age
 
 debug:
-  enabled: false
+  enabled: true
 
 global:
   safeToShowValues: false
