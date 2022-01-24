@@ -88,7 +88,7 @@ c.KubeSpawner.pod_name_template = (
 )
 
 # NodeSelector
-c.KubeSpawner.node_selector = {"jupyter": "prod"}
+#c.KubeSpawner.node_selector = {"jupyter": "prod"}
 
 # Namespace
 c.KubeSpawner.namespace = jupyterhub_hub_pod_namespace
@@ -98,7 +98,7 @@ c.KubeSpawner.enable_user_namespaces = True
 
 # Volumes
 c.KubeSpawner.storage_capacity = "10Gi"
-c.KubeSpawner.storage_class = "scw-bssd"
+c.KubeSpawner.storage_class = "managed-nfs-storage"
 c.KubeSpawner.storage_pvc_ensure = True
 c.KubeSpawner.pvc_name_template = (
     "claim-{username}-" + os.environ["JUPYTERHUB_ENV"].lower()

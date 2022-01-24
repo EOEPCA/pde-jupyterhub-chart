@@ -64,7 +64,7 @@ hub:
         - ReadWriteOnce
       storage: 1Gi
       subPath:
-      storageClassName: scw-bssd
+      storageClassName: managed-nfs-storage
     url:
     password:
   labels: {}
